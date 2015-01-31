@@ -5,15 +5,22 @@ var AVAILABILITY_PATH = "availability.txt";
 gather();
 //printViable();
 
+function allNames() {
+  return fs.readFileSync("names.txt", "utf8").split(/\s/);
+};
+
+function candidateNames() {
+  return allNames()
+    .map(function(n) { return n.toLowerCase(); })
+    .filter(function(n) { return n.match(/\W/) === null; })
+    .filter(function(name) { return name.length > 1 && name.length < 8; });
+};
+
 function gather() {
   console.log("Working.  Stop program any time - results are saved.");
-  var availability = readAvailability(AVAILABILITY_PATH);
-  var names = fs.readFileSync("names.txt", "utf8")
-      .split(/\s/)
-      .map(function(n) { return n.replace(/\W/g, "")})
-      .map(function(n) { return n.toLowerCase(); });
 
-  names.forEach(function(name) {
+  var availability = readAvailability(AVAILABILITY_PATH);
+  candidateNames().forEach(function(name) {
     if (!(name in availability)) {
       getAvailability(name, function(availabilityDatum) {
         availability[name] = availabilityDatum;
@@ -27,8 +34,11 @@ function printViable() {
   var availability = readAvailability(AVAILABILITY_PATH);
   var viable = getViable(availability);
   console.log(viable.join("\n"));
-  console.log("Viable count:", viable.length);
-  console.log("All count:", Object.keys(availability).length);
+  console.log();
+  console.log("Viable domain count:", viable.length);
+  console.log("Names for which data has been gathered", Object.keys(availability).length)
+  console.log("Candidate name count:", candidateNames().length);
+  console.log("All name count:", allNames().length);
 };
 
 function getViable(availability) {
@@ -36,7 +46,6 @@ function getViable(availability) {
     .filter(function(name) {
       return availability[name].isRegistered === false || availability[name].price > 0
     })
-    .filter(function(name) { return name.length < 8; })
     .filter(function(name) { return availability[name].price > 1000; })
     .sort(function(name1, name2) {
       return availability[name1].price - availability[name2].price;
